@@ -1,9 +1,10 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Webcam from 'react-webcam';
 import { OpenAI } from 'openai';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { storage } from './firebaseConfig';
 
+import noCam from './nocam.png'; // Replace with the actual path to your fallback image
 
 const openai = new OpenAI({
   //@ts-ignore
@@ -15,7 +16,15 @@ const CameraCapture = () => {
   const webcamRef = useRef<Webcam>(null);
   const [image, setImage] = useState<string | null>(null);
   const [response, setResponse] = useState<string | null>(null);
+  const [webcamAvailable, setWebcamAvailable] = useState(true);
 
+  useEffect(() => {
+    // Check if webcam is available
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(() => setWebcamAvailable(true))
+      .catch(() => setWebcamAvailable(false));
+  }, []);
+  
   const capture = () => {
     const imageSrc = webcamRef.current?.getScreenshot();
     if (imageSrc) {
@@ -82,13 +91,17 @@ const CameraCapture = () => {
 
   return (
     <div>
-      <Webcam
-        audio={false}
-        ref={webcamRef}
-        screenshotFormat="image/jpeg"
-        width={640}
-        height={480}
-      />
+      {webcamAvailable ? (
+        <Webcam
+          audio={false}
+          ref={webcamRef}
+          screenshotFormat="image/jpeg"
+          width={640}
+          height={480}
+        />
+      ) : (
+        <img src={noCam} alt="Fallback" width={640} height={480} />
+      )}
       <button onClick={capture}>Capture</button>
       <input type="file" accept="image/*" onChange={handleFileChange} />
       {image && <img src={image} className='w-[100px] h-[100px]' alt="Selected" />}
