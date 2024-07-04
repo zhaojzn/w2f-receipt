@@ -3,6 +3,8 @@ import Webcam from 'react-webcam';
 import { OpenAI } from 'openai';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { storage } from './firebaseConfig';
+import { Button } from "@/components/ui/button"
+
 
 import noCam from './nocam.png'; // Replace with the actual path to your fallback image
 
