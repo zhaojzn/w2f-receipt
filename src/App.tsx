@@ -3,7 +3,7 @@ import CameraCapture from './CameraCapture';
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-
+import { Input } from '@/components/ui/input';
 
 const App = () => {
   return (
@@ -29,10 +29,7 @@ const App = () => {
           <Separator />
           <div className="text-center">
             <p className="text-muted-foreground">Or you can upload an existing receipt image.</p>
-            <Button variant="outline" className="mt-4">
-              <UploadIcon className="mr-2 h-4 w-4" />
-              Upload Receipt
-            </Button>
+            <Input type="file" className="mt-4" />
           </div>
         </Card>
       </div>
