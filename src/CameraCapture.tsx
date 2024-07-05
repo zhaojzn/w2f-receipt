@@ -63,7 +63,6 @@ const CameraCapture = () => {
     if (image) {
       try {
         const imageURL = await uploadImageToServer(image);
-
         const response = await openai.chat.completions.create({
           model: "gpt-4o",
           messages: [
@@ -93,16 +92,25 @@ const CameraCapture = () => {
 
   return (
     <div>
-      {webcamAvailable ? (
-        <Webcam
-          audio={false}
-          ref={webcamRef}
-          screenshotFormat="image/jpeg"
-          width={640}
-          height={480}
-        />
+      {image ? (
+        <img src={image} alt="Captured" width={640} height={480} />
       ) : (
-        <img src={noCam} alt="Fallback" width={640} height={480} />
+        <>
+          {webcamAvailable ? (
+            <div>
+              <Webcam
+                audio={false}
+                ref={webcamRef}
+                screenshotFormat="image/jpeg"
+                width={640}
+                height={480}
+              />
+              <button onClick={capture}>Capture</button>
+            </div>
+          ) : (
+            <img src={noCam} alt="Fallback" width={640} height={480} />
+          )}
+        </>
       )}
       <button onClick={capture}>Capture</button>
       <input type="file" accept="image/*" onChange={handleFileChange} />
