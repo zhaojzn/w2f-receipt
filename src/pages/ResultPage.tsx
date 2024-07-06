@@ -10,6 +10,8 @@ interface Item {
   name: string;
   order: string;
   amount: number;
+  combined?: boolean;
+  originalItems?: Item[];
 }
 
 interface ResponseData {
@@ -24,7 +26,7 @@ const ResultPage = () => {
   const { response } = location.state as { response: ResponseData };
 
   const [items, setItems] = useState<Item[]>([]);
-  
+
   useEffect(() => {
     if (response) {
       const parsedItems = Object.entries(response).map(([name, details]) => {
@@ -39,20 +41,76 @@ const ResultPage = () => {
     }
   }, [response]);
 
-  const [taxRate, setTaxRate] = useState(0.08)
-  const [tipRate, setTipRate] = useState(0.15)
+  const [taxRate, setTaxRate] = useState(0.08);
+  const [tipRate, setTipRate] = useState(0.15);
+
   const calculateTotal = (item) => {
-    const subtotal = item.amount
-    const tax = subtotal * taxRate
-    const tip = subtotal * tipRate
-    return subtotal + tax + tip
-  }
+    const subtotal = item.amount;
+    const tax = subtotal * taxRate;
+    const tip = subtotal * tipRate;
+    return subtotal + tax + tip;
+  };
+
   const handleTaxRateChange = (e) => {
-    setTaxRate(parseFloat(e.target.value) / 100)
-  }
+    setTaxRate(parseFloat(e.target.value) / 100);
+  };
+
   const handleTipRateChange = (e) => {
-    setTipRate(parseFloat(e.target.value) / 100)
-  }
+    setTipRate(parseFloat(e.target.value) / 100);
+  };
+
+  const onDragStart = (event, index) => {
+    event.dataTransfer.setData("draggedItemIndex", index);
+  };
+
+  const onDrop = (event, dropIndex) => {
+    const draggedItemIndex = event.dataTransfer.getData("draggedItemIndex");
+    if (draggedItemIndex === undefined) {
+      return;
+    }
+
+    const draggedIndex = parseInt(draggedItemIndex, 10);
+    if (draggedIndex === dropIndex) {
+      return;
+    }
+
+    const updatedItems = [...items];
+    const draggedItem = updatedItems[draggedIndex];
+    const droppedItem = updatedItems[dropIndex];
+
+    const combinedItem = {
+      ...droppedItem,
+      amount: droppedItem.amount + draggedItem.amount,
+      order: `${droppedItem.order}, ${draggedItem.order}`,
+      combined: true,
+      originalItems: [...(droppedItem.originalItems || [droppedItem]), draggedItem],
+    };
+
+    updatedItems.splice(dropIndex, 1, combinedItem);
+    updatedItems.splice(draggedIndex, 1);
+    setItems(updatedItems);
+  };
+
+  const onDragOver = (event) => {
+    event.preventDefault();
+  };
+
+  const separateItem = (index) => {
+    const updatedItems = [...items];
+    const itemToSeparate = updatedItems[index];
+
+    if (itemToSeparate.combined && itemToSeparate.originalItems) {
+      updatedItems.splice(index, 1, ...itemToSeparate.originalItems);
+      updatedItems.sort((a, b) => a.name.localeCompare(b.name));
+      setItems(updatedItems);
+    }
+  };
+
+  const handleNameChange = (index, newName) => {
+    const updatedItems = [...items];
+    updatedItems[index].name = newName;
+    setItems(updatedItems);
+  };
 
   return (
     <div className="w-full p-4 sm:p-6">
@@ -100,17 +158,38 @@ const ResultPage = () => {
                   <TableHead className="text-right">Tax</TableHead>
                   <TableHead className="text-right">Tip</TableHead>
                   <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {items.map((item, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableRow
+                    key={index}
+                    draggable
+                    onDragStart={(event) => onDragStart(event, index)}
+                    onDragOver={onDragOver}
+                    onDrop={(event) => onDrop(event, index)}
+                  >
+                    <TableCell className="font-medium">
+                      <Input
+                        className='w-1/2'
+                        type="text"
+                        value={item.name}
+                        onChange={(e) => handleNameChange(index, e.target.value)}
+                      />
+                    </TableCell>
                     <TableCell>{item.order}</TableCell>
                     <TableCell className="text-right">${item.amount.toFixed(2)}</TableCell>
                     <TableCell className="text-right">${(item.amount * taxRate).toFixed(2)}</TableCell>
                     <TableCell className="text-right">${(item.amount * tipRate).toFixed(2)}</TableCell>
                     <TableCell className="text-right">${calculateTotal(item).toFixed(2)}</TableCell>
+                    <TableCell className="text-right">
+                      {item.combined && (
+                        <Button variant="outline" size="sm" onClick={() => separateItem(index)}>
+                          Separate
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
