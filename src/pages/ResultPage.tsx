@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -6,29 +6,39 @@ import { Input } from "@/components/ui/input"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 
+interface Item {
+  name: string;
+  order: string;
+  amount: number;
+}
 
+interface ResponseData {
+  [key: string]: {
+    order: string;
+    amount: number;
+  };
+}
 
 const ResultPage = () => {
   const location = useLocation();
-  const { response } = location.state;
+  const { response } = location.state as { response: ResponseData };
 
-  const [items, setItems] = useState([
-    {
-      name: "John Doe",
-      order: "Burger, Fries, Soda",
-      amount: 25.99,
-    },
-    {
-      name: "Jane Smith",
-      order: "Salad, Water",
-      amount: 12.5,
-    },
-    {
-      name: "Bob Johnson",
-      order: "Pizza, Beer",
-      amount: 18.75,
-    },
-  ])
+  const [items, setItems] = useState<Item[]>([]);
+  
+  useEffect(() => {
+    if (response) {
+      const parsedItems = Object.entries(response).map(([name, details]) => {
+        const detailItem = details as { order: string; amount: number }; // Type assertion
+        return {
+          name,
+          order: detailItem.order || '',
+          amount: detailItem.amount || 0,
+        };
+      });
+      setItems(parsedItems);
+    }
+  }, [response]);
+
   const [taxRate, setTaxRate] = useState(0.08)
   const [tipRate, setTipRate] = useState(0.15)
   const calculateTotal = (item) => {
